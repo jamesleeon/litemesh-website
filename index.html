@@ -800,8 +800,8 @@ curl -X PUT http://localhost:8080/v1/agent/service/register \
         </div>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://github.com/jamesleeon/litemesh" target="_blank" rel="noreferrer" data-i18n="startPrimary">GitHub Repository</a>
-          <a class="btn btn-secondary" href="../README.md" data-i18n="startSecondary">Repository README</a>
-          <a class="btn btn-secondary" href="../docs/README.md" data-i18n="startTertiary">Documentation</a>
+          <a id="link-readme" class="btn btn-secondary" href="https://github.com/jamesleeon/litemesh/blob/master/README.md" target="_blank" rel="noreferrer" data-i18n="startSecondary">Repository README</a>
+          <a id="link-docs" class="btn btn-secondary" href="https://github.com/jamesleeon/litemesh/blob/master/docs/en/README.md" target="_blank" rel="noreferrer" data-i18n="startTertiary">Documentation</a>
         </div>
       </section>
     </main>
@@ -820,7 +820,7 @@ curl -X PUT http://localhost:8080/v1/agent/service/register \
         </div>
         <div class="hero-actions">
           <a class="btn btn-secondary" href="https://github.com/jamesleeon/litemesh" target="_blank" rel="noreferrer" data-i18n="footerPrimary">Star on GitHub</a>
-          <a class="btn btn-secondary" href="../docs/quickstart.md" data-i18n="footerSecondary">Read Quick Start</a>
+          <a id="link-quickstart" class="btn btn-secondary" href="https://github.com/jamesleeon/litemesh/blob/master/docs/en/quickstart.md" target="_blank" rel="noreferrer" data-i18n="footerSecondary">Read Quick Start</a>
         </div>
       </div>
     </footer>
@@ -1001,6 +1001,21 @@ curl -X PUT http://localhost:8080/v1/agent/service/register \
       document.querySelectorAll('[data-lang-btn]').forEach((btn) => {
         btn.classList.toggle('active', btn.getAttribute('data-lang-btn') === lang);
       });
+
+      // Dynamically update document links based on language
+      const readmeLink = document.getElementById('link-readme');
+      const docsLink = document.getElementById('link-docs');
+      const quickstartLink = document.getElementById('link-quickstart');
+
+      if (lang === 'zh') {
+        if (readmeLink) readmeLink.href = 'https://github.com/jamesleeon/litemesh/blob/master/README.zh-CN.md';
+        if (docsLink) docsLink.href = 'https://github.com/jamesleeon/litemesh/blob/master/docs/zh-CN/README.md';
+        if (quickstartLink) quickstartLink.href = 'https://github.com/jamesleeon/litemesh/blob/master/docs/zh-CN/quickstart.md';
+      } else {
+        if (readmeLink) readmeLink.href = 'https://github.com/jamesleeon/litemesh/blob/master/README.md';
+        if (docsLink) docsLink.href = 'https://github.com/jamesleeon/litemesh/blob/master/docs/en/README.md';
+        if (quickstartLink) quickstartLink.href = 'https://github.com/jamesleeon/litemesh/blob/master/docs/en/quickstart.md';
+      }
 
       localStorage.setItem('litemesh-site-lang', lang);
     }
