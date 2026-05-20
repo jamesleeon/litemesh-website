@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Litemesh | Lightweight Service Discovery, KV, and Zero-Trust mTLS</title>
+  <meta name="description" content="Litemesh is a lightweight decentralized control plane for service discovery, distributed KV, health checks, and zero-trust mTLS.">
+  <style>
+    :root {
+      --bg: #f4efe5;
+      --surface: rgba(255, 248, 237, 0.88);
+      --surface-strong: #fffaf2;
+      --ink: #1f1f1a;
+      --muted: #5f5a51;
+      --line: rgba(31, 31, 26, 0.12);
+      --accent: #0f766e;
+      --accent-2: #c2410c;
+      --accent-3: #164e63;
+      --glow: rgba(15, 118, 110, 0.16);
+      --shadow: 0 24px 80px rgba(54, 44, 24, 0.14);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --max: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(194, 65, 12, 0.14), transparent 28%),
+        radial-gradient(circle at 85% 18%, rgba(15, 118, 110, 0.18), transparent 22%),
+        linear-gradient(180deg, #f8f2e8 0%, #f3ecdf 42%, #efe7d9 100%);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .shell {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 0 16px;
+      gap: 20px;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+      box-shadow: 0 10px 30px rgba(15, 118, 110, 0.28);
+      font-size: 1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      color: var(--muted);
+      font-size: 0.96rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--line);
+    }
+
+    .lang-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      min-width: 58px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    }
+
+    .lang-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .lang-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      align-items: stretch;
+      padding: 24px 0 48px;
+    }
+
+    .hero-main,
+    .hero-side,
+    .panel,
+    .quote,
+    .footer-band {
+      backdrop-filter: blur(12px);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      border-radius: var(--radius-xl);
+      padding: 34px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-main::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -100px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(15, 118, 110, 0.16), transparent 70%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      color: var(--accent);
+      border: 1px solid rgba(15, 118, 110, 0.18);
+      background: rgba(255, 255, 255, 0.6);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.02;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin-top: 22px;
+      max-width: 10ch;
+      font-size: clamp(3rem, 6vw, 6rem);
+      letter-spacing: -0.05em;
+    }
+
+    .hero-copy {
+      margin-top: 18px;
+      max-width: 56ch;
+      color: var(--muted);
+      font-size: 1.08rem;
+      line-height: 1.75;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      font-weight: 700;
+      font-size: 0.96rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      color: #fff;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+      box-shadow: 0 12px 30px rgba(15, 118, 110, 0.28);
+    }
+
+    .btn-secondary {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.68);
+    }
+
+    .hero-notes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .note {
+      border-radius: var(--radius-md);
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.58);
+      border: 1px solid rgba(31, 31, 26, 0.08);
+    }
+
+    .note-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .note-value {
+      margin-top: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .hero-side {
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .code-card {
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      background: #161815;
+      color: #edf2e8;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+
+    .code-title,
+    .side-title {
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .side-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini {
+      border-radius: var(--radius-md);
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.58);
+      border: 1px solid rgba(31, 31, 26, 0.08);
+    }
+
+    .mini strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+    }
+
+    .mini span {
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.92rem;
+    }
+
+    section {
+      padding: 20px 0 56px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .section-head p {
+      margin: 0;
+      max-width: 56ch;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      letter-spacing: -0.045em;
+    }
+
+    .feature-grid,
+    .compare-grid,
+    .flow-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .feature-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .panel {
+      border-radius: var(--radius-lg);
+      padding: 22px;
+    }
+
+    .panel-kicker {
+      color: var(--accent-2);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .panel h3 {
+      margin-top: 12px;
+      font-size: 1.4rem;
+      letter-spacing: -0.04em;
+    }
+
+    .panel p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .compare-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .compare-list {
+      margin: 18px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .compare-list li {
+      padding-left: 18px;
+      position: relative;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .compare-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.8em;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      transform: translateY(-50%);
+    }
+
+    .flow-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .flow-step {
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      background: rgba(255, 250, 242, 0.72);
+      border: 1px solid var(--line);
+      position: relative;
+    }
+
+    .flow-step::after {
+      content: "→";
+      position: absolute;
+      right: -14px;
+      top: 26px;
+      color: rgba(31, 31, 26, 0.24);
+      font-size: 1.4rem;
+    }
+
+    .flow-step:last-child::after {
+      display: none;
+    }
+
+    .flow-number {
+      display: inline-flex;
+      width: 34px;
+      height: 34px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--accent-2);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .flow-step h3 {
+      margin-top: 14px;
+      font-size: 1.2rem;
+    }
+
+    .flow-step p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 0.95rem;
+    }
+
+    .quote {
+      border-radius: var(--radius-xl);
+      padding: 30px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .quote-text {
+      font-size: clamp(1.55rem, 3vw, 2.5rem);
+      letter-spacing: -0.04em;
+      line-height: 1.16;
+    }
+
+    .quote-copy {
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 1rem;
+    }
+
+    .footer-band {
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      padding: 26px 26px 34px;
+      margin-top: 20px;
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .footer-copy {
+      color: var(--muted);
+      max-width: 54ch;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .quote {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-grid,
+      .flow-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .nav-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .nav-links,
+      .hero-notes,
+      .feature-grid,
+      .compare-grid,
+      .flow-grid,
+      .side-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links,
+      .hero-actions {
+        width: 100%;
+      }
+
+      .hero-main,
+      .hero-side,
+      .panel,
+      .quote,
+      .footer-band {
+        padding: 20px;
+      }
+
+      .flow-step::after {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="nav">
+      <a class="brand" href="#">
+        <span class="brand-mark">LM</span>
+        <span>Litemesh</span>
+      </a>
+      <div class="nav-right">
+        <nav class="nav-links">
+          <a href="#capabilities" data-i18n="navCapabilities">Capabilities</a>
+          <a href="#difference" data-i18n="navDifference">Why Litemesh</a>
+          <a href="#flow" data-i18n="navFlow">How It Works</a>
+          <a href="#start" data-i18n="navStart">Get Started</a>
+        </nav>
+        <div class="lang-switch" aria-label="Language Switcher">
+          <button class="lang-btn active" type="button" data-lang-btn="en">EN</button>
+          <button class="lang-btn" type="button" data-lang-btn="zh">中文</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-main">
+          <div class="eyebrow" data-i18n="eyebrow">Decentralized Control Plane</div>
+          <h1 data-i18n="heroTitle">Service discovery without the heavy machinery.</h1>
+          <p class="hero-copy" data-i18n="heroCopy">
+            Litemesh is a lightweight control plane for service discovery, distributed KV, health checks,
+            delayed jobs, and zero-trust mTLS. It gives teams a practical middle ground between
+            ad-hoc service registration and a full service mesh.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/jamesleeon/litemesh" target="_blank" rel="noreferrer" data-i18n="heroPrimary">View on GitHub</a>
+            <a class="btn btn-secondary" href="#start" data-i18n="heroSecondary">See Quick Start</a>
+          </div>
+          <div class="hero-notes">
+            <div class="note">
+              <div class="note-label" data-i18n="noteBuiltForLabel">Built For</div>
+              <div class="note-value" data-i18n="noteBuiltForValue">Registry, KV, mTLS, MCP</div>
+            </div>
+            <div class="note">
+              <div class="note-label" data-i18n="noteClusterLabel">Cluster Model</div>
+              <div class="note-value" data-i18n="noteClusterValue">Peer-to-peer gossip</div>
+            </div>
+            <div class="note">
+              <div class="note-label" data-i18n="noteOpsLabel">Operational Style</div>
+              <div class="note-value" data-i18n="noteOpsValue">Small footprint, fast setup</div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="hero-side">
+          <div>
+            <div class="side-title" data-i18n="quickStartTitle">Quick Start Snapshot</div>
+            <div class="code-card"><pre style="margin:0;white-space:pre;">go run ./cmd/litemesh -config config.example.yaml
+
+curl -X PUT http://localhost:8080/v1/agent/service/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ID": "web-1",
+    "Name": "web-service",
+    "Address": "127.0.0.1",
+    "Port": 8080
+  }'</pre></div>
+          </div>
+          <div>
+            <div class="side-title" data-i18n="useCasesTitle">What teams use it for</div>
+            <div class="side-grid">
+              <div class="mini">
+                <strong data-i18n="mini1Title">Service Discovery</strong>
+                <span data-i18n="mini1Copy">Track live instances and route around unhealthy nodes.</span>
+              </div>
+              <div class="mini">
+                <strong data-i18n="mini2Title">Distributed KV</strong>
+                <span data-i18n="mini2Copy">Store config, metadata, and small coordination records.</span>
+              </div>
+              <div class="mini">
+                <strong data-i18n="mini3Title">Zero-Trust mTLS</strong>
+                <span data-i18n="mini3Copy">Issue identities and bootstrap encrypted service-to-service traffic.</span>
+              </div>
+              <div class="mini">
+                <strong data-i18n="mini4Title">MCP Infrastructure</strong>
+                <span data-i18n="mini4Copy">Expose infrastructure context and tool discovery for AI workflows.</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section id="capabilities">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="capTitle">What Litemesh can do</h2>
+          </div>
+          <p data-i18n="capIntro">
+            Litemesh focuses on the building blocks teams usually need first:
+            discover services, watch for topology changes, distribute configuration,
+            coordinate simple control-plane actions, and secure east-west traffic.
+          </p>
+        </div>
+        <div class="feature-grid">
+          <article class="panel">
+            <div class="panel-kicker">01</div>
+            <h3 data-i18n="feature1Title">Decentralized Service Discovery</h3>
+            <p data-i18n="feature1Copy">
+              Register instances, monitor health, and let gateways or consumers react
+              through SSE-driven notify-then-pull updates.
+            </p>
+          </article>
+          <article class="panel">
+            <div class="panel-kicker">02</div>
+            <h3 data-i18n="feature2Title">Distributed KV and Coordination</h3>
+            <p data-i18n="feature2Copy">
+              Store config, namespace-scoped values, CAS updates, sessions, and lightweight
+              lock-style coordination primitives.
+            </p>
+          </article>
+          <article class="panel">
+            <div class="panel-kicker">03</div>
+            <h3 data-i18n="feature3Title">Built-In Zero-Trust mTLS</h3>
+            <p data-i18n="feature3Copy">
+              Use Litemesh as a practical identity and certificate layer when you want
+              encrypted service-to-service traffic without a full sidecar mesh.
+            </p>
+          </article>
+          <article class="panel">
+            <div class="panel-kicker">04</div>
+            <h3 data-i18n="feature4Title">Async Control-Plane Tasks</h3>
+            <p data-i18n="feature4Copy">
+              Submit delayed jobs with callback and retry behavior for reminders,
+              expiration workflows, and lightweight orchestration.
+            </p>
+          </article>
+          <article class="panel">
+            <div class="panel-kicker">05</div>
+            <h3 data-i18n="feature5Title">MCP-Ready Infrastructure</h3>
+            <p data-i18n="feature5Copy">
+              Expose tools, resources, and bridge-based MCP integrations for AI agents
+              that need live infrastructure context.
+            </p>
+          </article>
+          <article class="panel">
+            <div class="panel-kicker">06</div>
+            <h3 data-i18n="feature6Title">Small Operational Surface</h3>
+            <p data-i18n="feature6Copy">
+              Start with a compact Go binary, familiar HTTP APIs, and a workflow that feels
+              closer to shipping a registry than operating a platform stack.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="difference">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="diffTitle">Why teams look at Litemesh</h2>
+          </div>
+          <p data-i18n="diffIntro">
+            Litemesh is not trying to be everything. Its value comes from choosing a lighter,
+            more focused layer for service identity, discovery, and config propagation.
+          </p>
+        </div>
+        <div class="compare-grid">
+          <article class="panel">
+            <div class="panel-kicker" data-i18n="compareLeftKicker">Where it shines</div>
+            <h3 data-i18n="compareLeftTitle">Good fit when you want less platform weight</h3>
+            <ul class="compare-list">
+              <li data-i18n="compareLeftItem1">You need service discovery and distributed config without standing up a larger control plane.</li>
+              <li data-i18n="compareLeftItem2">You want real-time change signals for gateways or consumers.</li>
+              <li data-i18n="compareLeftItem3">You want mTLS building blocks without committing to a full sidecar mesh.</li>
+              <li data-i18n="compareLeftItem4">You want a practical control-plane base for AI or MCP-driven infrastructure workflows.</li>
+            </ul>
+          </article>
+          <article class="panel">
+            <div class="panel-kicker" data-i18n="compareRightKicker">How to think about it</div>
+            <h3 data-i18n="compareRightTitle">Not a full service mesh, not just a registry</h3>
+            <ul class="compare-list">
+              <li data-i18n="compareRightItem1">Smaller and lighter than a full mesh stack.</li>
+              <li data-i18n="compareRightItem2">Higher-level than rolling your own around a raw KV database.</li>
+              <li data-i18n="compareRightItem3">Best treated as a decentralized identity, discovery, and config foundation.</li>
+              <li data-i18n="compareRightItem4">Designed for teams that want useful primitives first, then deeper platform decisions later.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="flow">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="flowTitle">How it works</h2>
+          </div>
+          <p data-i18n="flowIntro">
+            The core interaction model is intentionally simple: write state once, emit a lightweight
+            signal, and let clients or peers re-pull the latest truth.
+          </p>
+        </div>
+        <div class="flow-grid">
+          <article class="flow-step">
+            <div class="flow-number">1</div>
+            <h3 data-i18n="flowStep1Title">Register</h3>
+            <p data-i18n="flowStep1Copy">Services or tools register with metadata, namespace, and optional health configuration.</p>
+          </article>
+          <article class="flow-step">
+            <div class="flow-number">2</div>
+            <h3 data-i18n="flowStep2Title">Propagate</h3>
+            <p data-i18n="flowStep2Copy">Cluster peers spread changes through gossip and targeted synchronization behavior.</p>
+          </article>
+          <article class="flow-step">
+            <div class="flow-number">3</div>
+            <h3 data-i18n="flowStep3Title">Notify</h3>
+            <p data-i18n="flowStep3Copy">Consumers receive lightweight SSE change signals instead of constantly polling for state.</p>
+          </article>
+          <article class="flow-step">
+            <div class="flow-number">4</div>
+            <h3 data-i18n="flowStep4Title">Reconcile</h3>
+            <p data-i18n="flowStep4Copy">Gateways, apps, or agents pull the latest snapshot and update their local view safely.</p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="quote">
+          <div class="quote-text" data-i18n="quoteText">
+            A lighter control plane for teams that want discovery, config, and identity
+            without dragging in an entire mesh program on day one.
+          </div>
+          <div class="quote-copy" data-i18n="quoteCopy">
+            Litemesh is strongest when it is treated as a sharp, focused layer. It can help
+            you move from ad-hoc service registration toward a more coherent control plane,
+            while keeping the operational model approachable.
+          </div>
+        </div>
+      </section>
+
+      <section id="start">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="startTitle">Get started fast</h2>
+          </div>
+          <p data-i18n="startIntro">
+            Start from the repository, docs, and release artifacts. This page is intentionally
+            simple so it can evolve into a proper project website later without locking you into
+            a bigger frontend setup today.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/jamesleeon/litemesh" target="_blank" rel="noreferrer" data-i18n="startPrimary">GitHub Repository</a>
+          <a class="btn btn-secondary" href="../README.md" data-i18n="startSecondary">Repository README</a>
+          <a class="btn btn-secondary" href="../docs/README.md" data-i18n="startTertiary">Documentation</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-band">
+      <div class="footer-grid">
+        <div>
+          <div class="brand">
+            <span class="brand-mark">LM</span>
+            <span>Litemesh</span>
+          </div>
+          <p class="footer-copy" data-i18n="footerCopy">
+            Lightweight decentralized service discovery, distributed KV, health-aware routing signals,
+            and zero-trust mTLS foundations for modern distributed systems.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <a class="btn btn-secondary" href="https://github.com/jamesleeon/litemesh" target="_blank" rel="noreferrer" data-i18n="footerPrimary">Star on GitHub</a>
+          <a class="btn btn-secondary" href="../docs/quickstart.md" data-i18n="footerSecondary">Read Quick Start</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const translations = {
+      en: {
+        title: "Litemesh | Lightweight Service Discovery, KV, and Zero-Trust mTLS",
+        description: "Litemesh is a lightweight decentralized control plane for service discovery, distributed KV, health checks, and zero-trust mTLS.",
+        navCapabilities: "Capabilities",
+        navDifference: "Why Litemesh",
+        navFlow: "How It Works",
+        navStart: "Get Started",
+        eyebrow: "Decentralized Control Plane",
+        heroTitle: "Service discovery without the heavy machinery.",
+        heroCopy: "Litemesh is a lightweight control plane for service discovery, distributed KV, health checks, delayed jobs, and zero-trust mTLS. It gives teams a practical middle ground between ad-hoc service registration and a full service mesh.",
+        heroPrimary: "View on GitHub",
+        heroSecondary: "See Quick Start",
+        noteBuiltForLabel: "Built For",
+        noteBuiltForValue: "Registry, KV, mTLS, MCP",
+        noteClusterLabel: "Cluster Model",
+        noteClusterValue: "Peer-to-peer gossip",
+        noteOpsLabel: "Operational Style",
+        noteOpsValue: "Small footprint, fast setup",
+        quickStartTitle: "Quick Start Snapshot",
+        useCasesTitle: "What teams use it for",
+        mini1Title: "Service Discovery",
+        mini1Copy: "Track live instances and route around unhealthy nodes.",
+        mini2Title: "Distributed KV",
+        mini2Copy: "Store config, metadata, and small coordination records.",
+        mini3Title: "Zero-Trust mTLS",
+        mini3Copy: "Issue identities and bootstrap encrypted service-to-service traffic.",
+        mini4Title: "MCP Infrastructure",
+        mini4Copy: "Expose infrastructure context and tool discovery for AI workflows.",
+        capTitle: "What Litemesh can do",
+        capIntro: "Litemesh focuses on the building blocks teams usually need first: discover services, watch for topology changes, distribute configuration, coordinate simple control-plane actions, and secure east-west traffic.",
+        feature1Title: "Decentralized Service Discovery",
+        feature1Copy: "Register instances, monitor health, and let gateways or consumers react through SSE-driven notify-then-pull updates.",
+        feature2Title: "Distributed KV and Coordination",
+        feature2Copy: "Store config, namespace-scoped values, CAS updates, sessions, and lightweight lock-style coordination primitives.",
+        feature3Title: "Built-In Zero-Trust mTLS",
+        feature3Copy: "Use Litemesh as a practical identity and certificate layer when you want encrypted service-to-service traffic without a full sidecar mesh.",
+        feature4Title: "Async Control-Plane Tasks",
+        feature4Copy: "Submit delayed jobs with callback and retry behavior for reminders, expiration workflows, and lightweight orchestration.",
+        feature5Title: "MCP-Ready Infrastructure",
+        feature5Copy: "Expose tools, resources, and bridge-based MCP integrations for AI agents that need live infrastructure context.",
+        feature6Title: "Small Operational Surface",
+        feature6Copy: "Start with a compact Go binary, familiar HTTP APIs, and a workflow that feels closer to shipping a registry than operating a platform stack.",
+        diffTitle: "Why teams look at Litemesh",
+        diffIntro: "Litemesh is not trying to be everything. Its value comes from choosing a lighter, more focused layer for service identity, discovery, and config propagation.",
+        compareLeftKicker: "Where it shines",
+        compareLeftTitle: "Good fit when you want less platform weight",
+        compareLeftItem1: "You need service discovery and distributed config without standing up a larger control plane.",
+        compareLeftItem2: "You want real-time change signals for gateways or consumers.",
+        compareLeftItem3: "You want mTLS building blocks without committing to a full sidecar mesh.",
+        compareLeftItem4: "You want a practical control-plane base for AI or MCP-driven infrastructure workflows.",
+        compareRightKicker: "How to think about it",
+        compareRightTitle: "Not a full service mesh, not just a registry",
+        compareRightItem1: "Smaller and lighter than a full mesh stack.",
+        compareRightItem2: "Higher-level than rolling your own around a raw KV database.",
+        compareRightItem3: "Best treated as a decentralized identity, discovery, and config foundation.",
+        compareRightItem4: "Designed for teams that want useful primitives first, then deeper platform decisions later.",
+        flowTitle: "How it works",
+        flowIntro: "The core interaction model is intentionally simple: write state once, emit a lightweight signal, and let clients or peers re-pull the latest truth.",
+        flowStep1Title: "Register",
+        flowStep1Copy: "Services or tools register with metadata, namespace, and optional health configuration.",
+        flowStep2Title: "Propagate",
+        flowStep2Copy: "Cluster peers spread changes through gossip and targeted synchronization behavior.",
+        flowStep3Title: "Notify",
+        flowStep3Copy: "Consumers receive lightweight SSE change signals instead of constantly polling for state.",
+        flowStep4Title: "Reconcile",
+        flowStep4Copy: "Gateways, apps, or agents pull the latest snapshot and update their local view safely.",
+        quoteText: "A lighter control plane for teams that want discovery, config, and identity without dragging in an entire mesh program on day one.",
+        quoteCopy: "Litemesh is strongest when it is treated as a sharp, focused layer. It can help you move from ad-hoc service registration toward a more coherent control plane, while keeping the operational model approachable.",
+        startTitle: "Get started fast",
+        startIntro: "Start from the repository, docs, and release artifacts. This page is intentionally simple so it can evolve into a proper project website later without locking you into a bigger frontend setup today.",
+        startPrimary: "GitHub Repository",
+        startSecondary: "Repository README",
+        startTertiary: "Documentation",
+        footerCopy: "Lightweight decentralized service discovery, distributed KV, health-aware routing signals, and zero-trust mTLS foundations for modern distributed systems.",
+        footerPrimary: "Star on GitHub",
+        footerSecondary: "Read Quick Start"
+      },
+      zh: {
+        title: "Litemesh | 轻量级服务发现、分布式 KV 与零信任 mTLS",
+        description: "Litemesh 是一个轻量级去中心化控制平面，提供服务发现、分布式 KV、健康检查与零信任 mTLS 能力。",
+        navCapabilities: "能力概览",
+        navDifference: "为什么是 Litemesh",
+        navFlow: "工作方式",
+        navStart: "快速开始",
+        eyebrow: "去中心化控制平面",
+        heroTitle: "别再为了服务发现，上整套重平台。",
+        heroCopy: "Litemesh 是一个轻量级控制平面，覆盖服务发现、分布式 KV、健康检查、延迟任务和零信任 mTLS。它适合那些不想停留在临时拼凑方案里，又暂时不想直接引入完整 service mesh 的团队。",
+        heroPrimary: "查看 GitHub",
+        heroSecondary: "看快速开始",
+        noteBuiltForLabel: "核心定位",
+        noteBuiltForValue: "Registry、KV、mTLS、MCP",
+        noteClusterLabel: "集群模型",
+        noteClusterValue: "对等 Gossip",
+        noteOpsLabel: "运维风格",
+        noteOpsValue: "轻量、直接、易落地",
+        quickStartTitle: "快速开始示意",
+        useCasesTitle: "团队通常拿它做什么",
+        mini1Title: "服务发现",
+        mini1Copy: "追踪活跃实例，并在节点异常时快速感知变化。",
+        mini2Title: "分布式 KV",
+        mini2Copy: "存放配置、元数据和轻量级协调状态。",
+        mini3Title: "零信任 mTLS",
+        mini3Copy: "签发身份并帮助服务间建立加密通信。",
+        mini4Title: "MCP 基础设施层",
+        mini4Copy: "为 AI 工作流暴露基础设施上下文和工具发现能力。",
+        capTitle: "Litemesh 能做什么",
+        capIntro: "Litemesh 聚焦团队最先真正需要的那几类能力：发现服务、感知拓扑变化、分发配置、完成轻量控制面协调，以及为东西向流量建立安全基础。",
+        feature1Title: "去中心化服务发现",
+        feature1Copy: "注册实例、跟踪健康状态，并通过 SSE 的 notify-then-pull 模式让网关或消费者快速感知变化。",
+        feature2Title: "分布式 KV 与协调能力",
+        feature2Copy: "提供命名空间、CAS、Session 以及轻量锁语义，用于配置分发和控制面协调。",
+        feature3Title: "内置零信任 mTLS",
+        feature3Copy: "把 Litemesh 当成一个务实的身份和证书层，在不引入完整 sidecar mesh 的情况下完成服务间加密。",
+        feature4Title: "异步控制面任务",
+        feature4Copy: "提交带回调和重试能力的延迟任务，用于提醒、到期触发和轻量编排。",
+        feature5Title: "面向 MCP 的基础设施能力",
+        feature5Copy: "为 AI Agent 暴露工具、资源和桥接式 MCP 集成，让基础设施上下文更容易接入智能工作流。",
+        feature6Title: "更小的运维表面积",
+        feature6Copy: "从单个 Go 二进制和熟悉的 HTTP API 开始，更像在交付一个注册中心，而不是运营一整套平台栈。",
+        diffTitle: "为什么团队会关注 Litemesh",
+        diffIntro: "Litemesh 并不想包打天下。它的价值来自于把服务身份、发现和配置传播这层做得更轻、更聚焦、更容易落地。",
+        compareLeftKicker: "适合的场景",
+        compareLeftTitle: "当你不想一上来就背上平台重量",
+        compareLeftItem1: "你需要服务发现和分布式配置，但不想先搭一个更重的控制平面。",
+        compareLeftItem2: "你希望网关或消费者能实时收到变化信号。",
+        compareLeftItem3: "你想要 mTLS 基础能力，但不准备立刻引入完整 sidecar mesh。",
+        compareLeftItem4: "你想给 AI 或 MCP 驱动的基础设施工作流提供一个务实的控制面底座。",
+        compareRightKicker: "应该怎么理解它",
+        compareRightTitle: "它不是完整 Service Mesh，也不只是个 Registry",
+        compareRightItem1: "比完整 mesh 栈更小、更轻。",
+        compareRightItem2: "比围绕原始 KV 数据库自己拼系统更高一层。",
+        compareRightItem3: "更适合作为去中心化的身份、发现与配置基础层。",
+        compareRightItem4: "适合那些先把关键基础能力跑起来，再逐步决定平台深度的团队。",
+        flowTitle: "它是怎么工作的",
+        flowIntro: "Litemesh 的核心交互模型刻意保持简单：写一次状态，发一个轻量信号，让客户端或节点自行回拉最新真相。",
+        flowStep1Title: "注册",
+        flowStep1Copy: "服务或工具带着元数据、命名空间和可选健康检查配置完成注册。",
+        flowStep2Title: "传播",
+        flowStep2Copy: "集群节点通过 Gossip 和定向同步机制传播变化。",
+        flowStep3Title: "通知",
+        flowStep3Copy: "消费者通过 SSE 收到轻量变化信号，而不是持续轮询。",
+        flowStep4Title: "回拉校正",
+        flowStep4Copy: "网关、应用或 Agent 回拉最新快照，并安全更新本地视图。",
+        quoteText: "给那些想要服务发现、配置和身份能力，但又不想第一天就拖进整套 mesh 项目的团队，一个更轻的控制平面。",
+        quoteCopy: "Litemesh 最适合被当作一层锋利而聚焦的基础能力来使用。它能帮助你从临时拼凑的注册方案，走向更成体系的控制平面，同时保留相对可控的运维复杂度。",
+        startTitle: "快速上手",
+        startIntro: "你可以从仓库、文档和 Release 直接开始。这一页刻意保持轻量，方便你后续演化成正式官网，而不是先引入更重的前端工程。",
+        startPrimary: "GitHub 仓库",
+        startSecondary: "仓库 README",
+        startTertiary: "项目文档",
+        footerCopy: "轻量级去中心化服务发现、分布式 KV、健康感知路由信号，以及面向现代分布式系统的零信任 mTLS 基础能力。",
+        footerPrimary: "去 GitHub 点个 Star",
+        footerSecondary: "查看快速开始"
+      }
+    };
+
+    function applyLanguage(lang) {
+      const dict = translations[lang] || translations.en;
+      document.documentElement.lang = lang;
+      document.title = dict.title;
+      const meta = document.querySelector('meta[name="description"]');
+      if (meta) meta.setAttribute('content', dict.description);
+
+      document.querySelectorAll('[data-i18n]').forEach((node) => {
+        const key = node.getAttribute('data-i18n');
+        if (dict[key]) {
+          node.textContent = dict[key];
+        }
+      });
+
+      document.querySelectorAll('[data-lang-btn]').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-lang-btn') === lang);
+      });
+
+      localStorage.setItem('litemesh-site-lang', lang);
+    }
+
+    const savedLang = localStorage.getItem('litemesh-site-lang');
+    const browserLang = navigator.language && navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const initialLang = savedLang || browserLang;
+
+    document.querySelectorAll('[data-lang-btn]').forEach((btn) => {
+      btn.addEventListener('click', () => applyLanguage(btn.getAttribute('data-lang-btn')));
+    });
+
+    applyLanguage(initialLang);
+  </script>
+</body>
+</html>
